@@ -64,6 +64,43 @@ class MainActivity2 : AppCompatActivity(), BiometricAuthListener {
         setupBehaviourFormAndButton()
     }
 
+    override fun onBiometricAuthenticationSuccess(result: BiometricPrompt.AuthenticationResult) {
+        Toast.makeText(
+            this,
+            "Biometric success",
+            Toast.LENGTH_SHORT
+        )
+
+        //simulate behaviour after biometric succeed
+        //READ -> baca pref fp dan simulate login
+        if (biometricMode == BiometricMode.READ) {
+            Toast.makeText(
+                this,
+                "read data login",
+                Toast.LENGTH_SHORT
+            )
+                .show()
+            pref.username = pref.fpusername
+            pref.fpusername?.let { pref.fppassword?.let { it1 -> doLogin(it, it1) } }
+        } else {
+            //SAVE -> simulate login, kalo succeed baru save pref fp
+            doLogin(binding.username.text.toString(), binding.password.text.toString()) { username, password ->
+                pref.fpusername = username
+                pref.fppassword = password
+
+                Toast.makeText(this, "save data login", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
+
+
+    }
+
+    override fun onBiometricAuthenticationError(errorCode: Int, errorMessage: String) {
+        Toast.makeText(this, "Biometric login. Error: $errorMessage", Toast.LENGTH_SHORT)
+            .show()
+    }
+
     private fun creeateDialogToUseBiometric() {
         alertDialog = this.run {
             val builder = AlertDialog.Builder(this)
@@ -192,40 +229,5 @@ class MainActivity2 : AppCompatActivity(), BiometricAuthListener {
         setupBehaviourFormAndButton()
     }
 
-    override fun onBiometricAuthenticationSuccess(result: BiometricPrompt.AuthenticationResult) {
-        Toast.makeText(
-            this,
-            "Biometric success",
-            Toast.LENGTH_SHORT
-        )
 
-        //simulate behaviour after biometric succeed
-        //READ -> baca pref fp dan simulate login
-        if (biometricMode == BiometricMode.READ) {
-            Toast.makeText(
-                this,
-                "read data login",
-                Toast.LENGTH_SHORT
-            )
-                .show()
-            pref.username = pref.fpusername
-            pref.fpusername?.let { pref.fppassword?.let { it1 -> doLogin(it, it1) } }
-        } else {
-            //SAVE -> simulate login, kalo succeed baru save pref fp
-            doLogin(binding.username.text.toString(), binding.password.text.toString()) { username, password ->
-                pref.fpusername = username
-                pref.fppassword = password
-
-                Toast.makeText(this, "save data login", Toast.LENGTH_SHORT)
-                    .show()
-            }
-        }
-
-
-    }
-
-    override fun onBiometricAuthenticationError(errorCode: Int, errorMessage: String) {
-        Toast.makeText(this, "Biometric login. Error: $errorMessage", Toast.LENGTH_SHORT)
-            .show()
-    }
 }
