@@ -1,5 +1,6 @@
 package com.example.loginbiometric.example2
 
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.View
@@ -132,6 +133,8 @@ class MainActivity2 : AppCompatActivity(), BiometricAuthListener {
 
             binding.password.setText("")
             setupBehaviourViewUsername()
+            finish()
+            startActivity(Intent(this, PdfViewerActtivity::class.java))
         } else {
             Toast.makeText(
                 this,
