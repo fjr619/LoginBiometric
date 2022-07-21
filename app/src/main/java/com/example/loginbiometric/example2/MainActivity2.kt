@@ -3,7 +3,9 @@ package com.example.loginbiometric.example2
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import android.widget.TimePicker
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -31,6 +33,7 @@ var SharedPreferences.fppassword
         edit().putString("fppassword", value).apply()
     }
 
+//untuk state dari biometric
 enum class BiometricMode {
     SAVE, READ
 }
@@ -41,9 +44,9 @@ class MainActivity2 : AppCompatActivity(), BiometricAuthListener {
     private lateinit var pref: SharedPreferences
     private var biometricMode: BiometricMode? = null
 
-//    companion object {
-//        private const val TAG = "BioMetric"
-//    }
+    companion object {
+        private const val TAG = "BioMetric"
+    }
 
     private lateinit var alertDialog: AlertDialog
 
@@ -54,15 +57,11 @@ class MainActivity2 : AppCompatActivity(), BiometricAuthListener {
 
         pref = this.getSharedPreferences("sp", MODE_PRIVATE)
         creeateDialogToUseBiometric()
-
-        //setup data login from pref (simulation for relogin
-        setupBehaviourViewUsername()
     }
 
     override fun onResume() {
         super.onResume()
-        //button visibility jika ada data fpusername dan fppassword
-        showBiometricLoginOption()
+        setupBehaviourFormAndButton()
     }
 
     private fun creeateDialogToUseBiometric() {
@@ -83,7 +82,7 @@ class MainActivity2 : AppCompatActivity(), BiometricAuthListener {
                     doLogin(binding.username.text.toString(), binding.password.text.toString())
                 }
 
-                setTitle("Do you want to login with fingerprint?")
+                setTitle("Do you want to enable login with fingerprint?")
             }
 
             // Create the AlertDialog
@@ -91,17 +90,31 @@ class MainActivity2 : AppCompatActivity(), BiometricAuthListener {
         }
     }
 
-    private fun setupBehaviourViewUsername() {
+    private fun setupBehaviourFormAndButton() {
+        Log.i(TAG, "BiometricUtil.isBiometricReady(this) ${BiometricUtil.isBiometricReady(this)}")
+        Log.i(TAG, "pref.fpusername ${pref.fpusername} pref.fppassword ${pref.fppassword} ")
         binding.username.setText(pref.username)
+
         if (pref.username.isNullOrEmpty().not()) {
             binding.username.isEnabled = false
             binding.buttonLogin.text = "Relogin"
-            binding.buttonReset.visibility = View.VISIBLE
+            binding.buttonLogout.visibility = View.VISIBLE
         } else {
             binding.username.isEnabled = true
             binding.buttonLogin.text = "login"
-            binding.buttonReset.visibility = View.GONE
+            binding.buttonLogout.visibility = View.GONE
         }
+
+        binding.buttonBiometricsLogin.visibility =
+            if (BiometricUtil.isBiometricReady(this) &&
+                pref.fpusername.isNullOrEmpty().not() &&
+                pref.fppassword.isNullOrEmpty().not()
+            ) View.VISIBLE
+            else View.GONE
+
+        binding.buttonReset.visibility =
+            if (pref.fpusername.isNullOrEmpty() && pref.fppassword.isNullOrEmpty())
+                View.GONE else View.VISIBLE
     }
 
     private fun showBiometricPrompt() {
@@ -113,16 +126,8 @@ class MainActivity2 : AppCompatActivity(), BiometricAuthListener {
         )
     }
 
-    private fun showBiometricLoginOption() {
-        binding.buttonBiometricsLogin.visibility =
-            if (BiometricUtil.isBiometricReady(this) &&
-                pref.fppassword.isNullOrEmpty().not() &&
-                pref.fppassword.isNullOrEmpty().not()
-            ) View.VISIBLE
-            else View.GONE
-    }
-
-    private fun doLogin(userName: String, password: String) {
+    //simulate login process
+    private fun doLogin(userName: String, password: String, doSomething: (String, String) -> Unit = {_,_ ->}) {
         if (userName == "aa" && password == "bb") {
             Toast.makeText(
                 this,
@@ -131,8 +136,10 @@ class MainActivity2 : AppCompatActivity(), BiometricAuthListener {
             )
                 .show()
 
-            binding.password.setText("")
-            setupBehaviourViewUsername()
+//            binding.password.setText("")
+//            setupBehaviourFormAndButton()
+
+            doSomething.invoke(userName, password)
             finish()
             startActivity(Intent(this, PdfViewerActtivity::class.java))
         } else {
@@ -145,18 +152,23 @@ class MainActivity2 : AppCompatActivity(), BiometricAuthListener {
         }
     }
 
+    //simulate biometric login
     fun onClickBiometrics(view: View) {
         biometricMode = BiometricMode.READ
         showBiometricPrompt()
     }
 
+    //simulate normal login
     fun onClickLogin(view: View) {
         val userName = binding.username.text.toString()
         val password = binding.password.text.toString()
         if (userName.isNotEmpty() &&
             password.isNotEmpty()
         ) {
-            if (BiometricUtil.isBiometricReady(this) && pref.username.isNullOrEmpty()) {
+            if (BiometricUtil.isBiometricReady(this) &&
+                pref.username.isNullOrEmpty() ||
+                (pref.fppassword.isNullOrEmpty() &&
+                pref.fppassword.isNullOrEmpty())) {
                 pref.username = binding.username.text.toString()
                 alertDialog.show()
             } else {
@@ -167,29 +179,49 @@ class MainActivity2 : AppCompatActivity(), BiometricAuthListener {
     }
 
     //simulate klo relogin dan ingin ganti email
-    fun onClickReset(view: View) {
+    fun onClickLogout(view: View) {
         pref.username = null
         binding.password.setText("")
-        setupBehaviourViewUsername()
+        setupBehaviourFormAndButton()
+    }
+
+    //simulate reset data fingerprint (local)
+    fun onClickReset(view: View) {
+        pref.fpusername = null
+        pref.fppassword = null
+        setupBehaviourFormAndButton()
     }
 
     override fun onBiometricAuthenticationSuccess(result: BiometricPrompt.AuthenticationResult) {
+        Toast.makeText(
+            this,
+            "Biometric success",
+            Toast.LENGTH_SHORT
+        )
+
+        //simulate behaviour after biometric succeed
+        //READ -> baca pref fp dan simulate login
         if (biometricMode == BiometricMode.READ) {
             Toast.makeText(
                 this,
-                "Biometric success\nread data login",
+                "read data login",
                 Toast.LENGTH_SHORT
             )
                 .show()
             pref.username = pref.fpusername
+            pref.fpusername?.let { pref.fppassword?.let { it1 -> doLogin(it, it1) } }
         } else {
-            pref.fpusername = binding.username.text.toString()
-            pref.fppassword = binding.password.text.toString()
-            Toast.makeText(this, "Biometric success\nsave data login", Toast.LENGTH_SHORT)
-                .show()
+            //SAVE -> simulate login, kalo succeed baru save pref fp
+            doLogin(binding.username.text.toString(), binding.password.text.toString()) { username, password ->
+                pref.fpusername = username
+                pref.fppassword = password
+
+                Toast.makeText(this, "save data login", Toast.LENGTH_SHORT)
+                    .show()
+            }
         }
 
-        pref.fpusername?.let { pref.fppassword?.let { it1 -> doLogin(it, it1) } }
+
     }
 
     override fun onBiometricAuthenticationError(errorCode: Int, errorMessage: String) {
