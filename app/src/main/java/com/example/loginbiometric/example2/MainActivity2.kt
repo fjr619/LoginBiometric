@@ -115,6 +115,7 @@ class MainActivity2 : AppCompatActivity(), BiometricAuthListener {
                     "no"
                 ) { dialog, id ->
                     // User cancelled the dialog
+                    onClickReset(binding.buttonReset)
                     dialog.dismiss()
                     doLogin(binding.username.text.toString(), binding.password.text.toString())
                 }
